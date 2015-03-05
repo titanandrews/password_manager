@@ -5,6 +5,7 @@ defmodule PasswordManager.Mixfile do
     [app: :password_manager,
      version: "0.0.1",
      elixir: "~> 1.0",
+     escript: escript_config,
      deps: deps]
   end
 
@@ -13,6 +14,10 @@ defmodule PasswordManager.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [applications: [:logger]]
+  end
+
+  defp escript_config do
+    [ main_module: PasswordManager.CLI ]
   end
 
   # Dependencies can be Hex packages:
