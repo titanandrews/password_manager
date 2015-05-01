@@ -43,13 +43,23 @@ defmodule PasswordManager do
 
   # Decrypts and loads the Records from file.
   # Returns the Records or {:error, reason}
+  # Returns empty list if the file does not exist.
   def load(pass_phrase, file_name \\ @db_file_name) do
-    case decrypt(file_name, @tmp_db_file_name, pass_phrase) do
-      :ok ->
-        File.read!(file_name) |> :erlang.binary_to_term
-      {:error, reason} ->
-        {:error, "Unable to load. #{reason}"}
+    case File.exists?(file_name) do
+      true ->
+        case decrypt(file_name, @tmp_db_file_name, pass_phrase) do
+          :ok ->
+            File.read!(file_name) |> :erlang.binary_to_term
+          {:error, reason} ->
+            {:error, "Unable to load. #{reason}"}
+          end
+      false ->
+        []
     end
+  end
+
+  def db_exists? do
+    File.exists?(@db_file_name)
   end
 
   defp encrypt(in_file, out_file, pass_phrase) do
