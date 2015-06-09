@@ -51,9 +51,14 @@ defmodule PasswordManager.CLI do
 
     defp _save("yes", record) do
       passwd = _request_passwd
-      records = PasswordManager.load(passwd)
-      new_records =  Enum.concat(records, [record])
-      PasswordManager.save(new_records, passwd)
+      case PasswordManager.load(passwd) do
+        {:error, reason} ->
+          IO.puts "Record not saved! #{reason}"
+          _reset_passwd
+        records ->
+          new_records =  Enum.concat(records, [record])
+          PasswordManager.save(new_records, passwd)
+      end
     end
 
     defp _save(other, _) do
@@ -98,10 +103,15 @@ defmodule PasswordManager.CLI do
     defp _process_passwd(nil) do
       passwd = IO.gets(:standard_io, "Enter the master password? ") |> String.strip
       State.put_passwd(passwd)
+      passwd
     end
 
     defp _process_passwd(passwd) do
       passwd
+    end
+
+    defp _reset_passwd do
+      State.put_passwd(nil)
     end
   end
 

@@ -75,11 +75,15 @@ defmodule PasswordManager do
 
   defp decrypt(in_file, out_file, pass_phrase) do
     try do
-     System.cmd("openssl", ["enc", "-aes-256-cbc", "-d", "-k", "#{pass_phrase}",
-                            "-in", "#{in_file}", "-out", "#{out_file}"])
-     File.cp!(out_file, in_file)
-     File.rm(out_file)
-     :ok
+      case System.cmd("openssl", ["enc", "-aes-256-cbc", "-d", "-k", "#{pass_phrase}",
+                                  "-in", "#{in_file}", "-out", "#{out_file}"]) do
+        {_, 0} ->
+          File.cp!(out_file, in_file)
+          File.rm(out_file)
+          :ok
+        {_, exit_code} ->
+          {:error, "Could not decrypt file #{in_file}"}
+      end
     rescue e in ErlangError -> e
       {:error, "Could not decrypt file #{in_file} #{ErlangError.message(e)}"}
     end
