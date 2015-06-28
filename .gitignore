@@ -3,3 +3,4 @@
 erl_crash.dump
 *.ez
 password_manager
+password_manager.db

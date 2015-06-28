@@ -3,6 +3,17 @@ defmodule PasswordManager do
     defstruct title: "", user: "", password: "", notes: ""
   end
 
+  defimpl String.Chars, for: Record do
+    def to_string(record) do
+      """
+      Title: #{record.title}
+      User name: #{record.user}
+      Password: #{record.password}
+      Notes: #{record.notes}
+      """
+    end
+  end
+
   @db_file_name  "password_manager.db"
   @tmp_db_file_name  "password_manager.db.tmp"
 
@@ -49,7 +60,9 @@ defmodule PasswordManager do
       true ->
         case decrypt(file_name, @tmp_db_file_name, pass_phrase) do
           :ok ->
-            File.read!(file_name) |> :erlang.binary_to_term
+            records = File.read!(@tmp_db_file_name) |> :erlang.binary_to_term
+            File.rm(@tmp_db_file_name)
+            records
           {:error, reason} ->
             {:error, "Unable to load. #{reason}"}
           end
@@ -78,8 +91,6 @@ defmodule PasswordManager do
       case System.cmd("openssl", ["enc", "-aes-256-cbc", "-d", "-k", "#{pass_phrase}",
                                   "-in", "#{in_file}", "-out", "#{out_file}"]) do
         {_, 0} ->
-          File.cp!(out_file, in_file)
-          File.rm(out_file)
           :ok
         {_, exit_code} ->
           {:error, "Could not decrypt file #{in_file}"}

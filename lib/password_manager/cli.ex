@@ -41,7 +41,7 @@ defmodule PasswordManager.CLI do
       notes = IO.gets(:standard_io, "Notes? ") |> String.strip
       IO.puts "A new record with the following information will be created"
       IO.puts "\tTitle: #{title}"
-      IO.puts "\tUser: #{user}"
+      IO.puts "\tUser name: #{user}"
       IO.puts "\tPassword: #{password}"
       IO.puts "\tNotes: #{notes}"
       confirm = IO.gets(:standard_io, "Confirm yes/no? ") |> String.downcase |>  String.strip
@@ -66,8 +66,26 @@ defmodule PasswordManager.CLI do
     end
 
     defp _find do
-      IO.puts "I find it!!"
       passwd = _request_passwd
+      search_key = IO.gets(:standard_io, "Enter text to search: ") |> String.downcase |>  String.strip
+      case PasswordManager.load(passwd) do
+        {:error, reason} ->
+          IO.puts "Cannot open database #{reason}"
+          _reset_passwd
+        records ->
+          filtered_records = PasswordManager.search(records, search_key)
+          _list_records(filtered_records)
+      end
+    end
+
+    defp _list_records([]) do
+      IO.puts "No records found."
+    end
+
+    defp _list_records(records) do
+      IO.puts "Found #{length(records)} matching entries."
+      IO.puts "-----------------------------------------------"
+      Enum.each(records, fn(r) -> IO.puts r end)
     end
 
     defp _delete do
@@ -76,8 +94,16 @@ defmodule PasswordManager.CLI do
     end
 
     defp _dump do
-      IO.puts "I dump it!!!"
       passwd = _request_passwd
+      case PasswordManager.load(passwd) do
+        {:error, reason} ->
+          IO.puts "Cannot open database #{reason}"
+          _reset_passwd
+        records ->
+          IO.puts "#{length(records)} total entries"
+          IO.puts "-----------------------------------------------"
+          Enum.each(records, fn(r) -> IO.puts r end)
+      end
     end
 
     defp _help do
