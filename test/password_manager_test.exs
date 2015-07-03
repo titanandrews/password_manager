@@ -84,10 +84,6 @@ defmodule PasswordManagerTest do
     assert Enum.at(records, 1) == pr2
   end
 
-  test "db_exists?" do
-    assert not PasswordManager.db_exists?
-  end
-
   test "returns empty list when db does not exist" do
     records = PasswordManager.load("my_password_123", "test_load.db")
     assert Enum.empty?(records)

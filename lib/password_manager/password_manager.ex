@@ -71,10 +71,6 @@ defmodule PasswordManager do
     end
   end
 
-  def db_exists? do
-    File.exists?(@db_file_name)
-  end
-
   defp encrypt(in_file, out_file, pass_phrase) do
     try do
       System.cmd("openssl", ["enc", "-aes-256-cbc", "-k", "#{pass_phrase}",
