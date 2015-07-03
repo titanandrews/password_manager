@@ -35,7 +35,6 @@ defmodule PasswordManager.CLI do
 
     defp _new do
       title = IO.gets(:standard_io, "Title? ") |> String.strip
-      # TODO: Check for dups
       user = IO.gets(:standard_io, "User name or id? ") |> String.strip
       password = IO.gets(:standard_io, "Password? ") |> String.strip
       notes = IO.gets(:standard_io, "Notes? ") |> String.strip
@@ -56,8 +55,14 @@ defmodule PasswordManager.CLI do
           IO.puts "Record not saved! #{reason}"
           _reset_passwd
         records ->
-          new_records =  Enum.concat(records, [record])
-          PasswordManager.save(new_records, passwd)
+          case PasswordManager.duplicate?(records, record.title) do
+            true ->
+              IO.puts "Record not saved!\n" <>
+                      "Duplicate record detected. Delete the old one first."
+            false ->
+              new_records =  Enum.concat(records, [record])
+              PasswordManager.save(new_records, passwd)
+          end
       end
     end
 
