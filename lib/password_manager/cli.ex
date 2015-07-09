@@ -95,22 +95,6 @@ defmodule PasswordManager.CLI do
       Enum.each(records, fn(r) -> IO.puts r end)
     end
 
-    defp _convert_to_int(i) do
-      try do
-        idx = String.to_integer(i)
-      rescue e in ArgumentError -> e
-        {:error, "Not a number."}
-      end
-    end
-
-    defp _validate_range(idx, len) do
-      if idx in 1..len do
-        {:ok}
-      else
-        {:error, "Number must be from 1 to #{len}."}
-      end
-    end
-
     defp _get_idx_for_multi_choice_delete(records) do
       titles_with_idx = PasswordManager.make_indexed_titles(records)
       indeces = Map.keys(titles_with_idx)
@@ -118,11 +102,11 @@ defmodule PasswordManager.CLI do
       Enum.each(indeces, fn(i) -> IO.puts "(#{i}) ===> #{titles_with_idx[i]}" end)
       idx = IO.gets(:standard_io, "Enter the number of the record you want to delete: ")
         |> String.downcase |>  String.strip
-      case _convert_to_int(idx) do
+      case PasswordManager.Util.convert_to_int(idx) do
         {:error, msg} ->
           {:error, msg}
         num ->
-          case _validate_range(num, length(records)) do
+          case PasswordManager.Util.validate_range(num, length(records)) do
             {:ok} ->
               {num, titles_with_idx[num]}
             {:error, msg} ->
