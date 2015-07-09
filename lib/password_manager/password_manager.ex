@@ -41,6 +41,27 @@ defmodule PasswordManager do
     List.update_at(records, idx, fn(val) -> record end)
   end
 
+  # Creates a map of 1 based indexed titles from the given Records, i.e.
+  # %{1 => "My title 1", 2 => "M title 2}"
+  def make_indexed_titles(records) do
+    titles = %{}
+    _make_indexed_titles(records, titles, 1)
+  end
+
+  defp _make_indexed_titles(records, titles, idx) when idx < length(records) do
+    titles = _put_indexed_titles(records, titles, idx)
+    _make_indexed_titles(records, titles, idx + 1)
+  end
+
+  defp _make_indexed_titles(records, titles, idx) do
+    _put_indexed_titles(records, titles, idx)
+  end
+
+  defp _put_indexed_titles(records, titles, idx) do
+    title = Enum.at(records, idx - 1).title
+    Map.put(titles, idx, title)
+  end
+
   # Saves the Records to a file and encrypts with openssl 256 AES.
   # Returns :ok or {:error, reason}
   def save(records, pass_phrase, file_name \\ @db_file_name) do

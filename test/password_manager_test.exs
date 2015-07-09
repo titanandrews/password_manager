@@ -88,4 +88,17 @@ defmodule PasswordManagerTest do
     records = PasswordManager.load("my_password_123", "test_load.db")
     assert Enum.empty?(records)
   end
+
+  test "creates a 1 based title map for records" do
+    pr1 = %PasswordManager.Record{title: "MyBank", user: "Hulk",
+                                  password: "1234", notes: "Bank with big money."}
+    pr2 = %PasswordManager.Record{title: "MyOtherBank", user: "Hulk",
+                                  password: "1234", notes: "Bank with vacation savings."}
+
+    titles = PasswordManager.make_indexed_titles([pr1, pr2])
+    assert titles != nil
+    assert Map.size(titles) == 2
+    assert titles[1] == "MyBank"
+    assert titles[2] == "MyOtherBank"
+  end
 end

@@ -77,9 +77,11 @@ defmodule PasswordManager.CLI do
         {:error, reason} ->
           IO.puts "Cannot open database #{reason}"
           _reset_passwd
-        records ->
-          filtered_records = PasswordManager.search(records, search_key)
+          []
+        all_records ->
+          filtered_records = PasswordManager.search(all_records, search_key)
           _list_records(filtered_records)
+          {filtered_records, all_records}
       end
     end
 
@@ -93,9 +95,77 @@ defmodule PasswordManager.CLI do
       Enum.each(records, fn(r) -> IO.puts r end)
     end
 
+    defp _convert_to_int(i) do
+      try do
+        idx = String.to_integer(i)
+      rescue e in ArgumentError -> e
+        {:error, "Not a number."}
+      end
+    end
+
+    defp _validate_range(idx, len) do
+      if idx in 1..len do
+        {:ok}
+      else
+        {:error, "Number must be from 1 to #{len}."}
+      end
+    end
+
+    defp _get_idx_for_multi_choice_delete(records) do
+      titles_with_idx = PasswordManager.make_indexed_titles(records)
+      indeces = Map.keys(titles_with_idx)
+      indeces = Enum.sort(indeces)
+      Enum.each(indeces, fn(i) -> IO.puts "(#{i}) ===> #{titles_with_idx[i]}" end)
+      idx = IO.gets(:standard_io, "Enter the number of the record you want to delete: ")
+        |> String.downcase |>  String.strip
+      case _convert_to_int(idx) do
+        {:error, msg} ->
+          {:error, msg}
+        num ->
+          case _validate_range(num, length(records)) do
+            {:ok} ->
+              {num, titles_with_idx[num]}
+            {:error, msg} ->
+              {:error, msg}
+          end
+      end
+    end
+
     defp _delete do
-      IO.puts "I delete it!!"
-      passwd = _request_passwd
+      case _find do
+        [] ->
+          [] # Do nothing.
+        {filtered_records, all_records} ->
+          idx_for_delete = nil
+          case length(filtered_records) do
+            0 -> 0
+            1 ->
+              idx_for_delete = PasswordManager.find_index(all_records,
+                                                          Enum.at(filtered_records, 0).title)
+            other ->
+              case _get_idx_for_multi_choice_delete(filtered_records) do
+                {:error, msg} ->
+                  IO.puts msg
+                {num, title} ->
+                  idx_for_delete = PasswordManager.find_index(all_records, title)
+              end
+          end
+          if idx_for_delete != nil do
+            record = Enum.at(all_records, idx_for_delete)
+            confirm = IO.gets(:standard_io, "The following record will be deleted.\n#{record}" <>
+                                            "Confirm yes/no? ") |> String.downcase |>  String.strip
+            _do_delete(confirm, all_records, idx_for_delete)
+          end
+      end
+    end
+
+    defp _do_delete("yes", records, idx) do
+      records = List.delete_at(records, idx)
+      PasswordManager.save(records, _request_passwd)
+    end
+
+    defp _do_delete(other, records, idx) do
+      IO.puts "Nothing deleted."
     end
 
     defp _dump do
