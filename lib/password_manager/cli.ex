@@ -206,9 +206,18 @@ defmodule PasswordManager.CLI do
     process_input
   end
 
+  def exe_path do
+    path = System.find_executable("password_manager")
+    if path == nil do
+      path = "."
+    end
+    Path.dirname(path)
+  end
+
   def main(argv) do
     IO.puts "\n\t\tWelcome to Password Manager!\n"
-    File.read!("LICENSE") |> IO.puts
+    lic_path = Path.join(exe_path, "LICENSE")
+    File.read!(lic_path) |> IO.puts
     IO.puts "\tEnter help to see a list of commands"
     State.start_link
     process_input

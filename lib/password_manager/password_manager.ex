@@ -14,8 +14,13 @@ defmodule PasswordManager do
     end
   end
 
-  @db_file_name  "password_manager.db"
-  @tmp_db_file_name  "password_manager.db.tmp"
+  def db_path do
+    Path.join(System.user_home, ".password_manager.db")
+  end
+
+  def tmp_db_path do
+    Path.join(System.user_home, ".password_manager.db.tmp")
+  end
 
   def search(records, key) do
     lower_key = String.downcase(key)
@@ -64,25 +69,25 @@ defmodule PasswordManager do
 
   # Saves the Records to a file and encrypts with openssl 256 AES.
   # Returns :ok or {:error, reason}
-  def save(records, pass_phrase, file_name \\ @db_file_name) do
-    case File.write(@tmp_db_file_name, :erlang.term_to_binary(records)) do
+  def save(records, pass_phrase, file_name \\ db_path) do
+    case File.write(tmp_db_path, :erlang.term_to_binary(records)) do
       :ok ->
-        encrypt(@tmp_db_file_name, file_name, pass_phrase)
+        encrypt(tmp_db_path, file_name, pass_phrase)
       {:error, reason} ->
-        {:error, "Unable to save. Could not write to temp file #{@tmp_db_file_name} #{reason}"}
+        {:error, "Unable to save. Could not write to temp file #{tmp_db_path} #{reason}"}
     end
   end
 
   # Decrypts and loads the Records from file.
   # Returns the Records or {:error, reason}
   # Returns empty list if the file does not exist.
-  def load(pass_phrase, file_name \\ @db_file_name) do
+  def load(pass_phrase, file_name \\ db_path) do
     case File.exists?(file_name) do
       true ->
-        case decrypt(file_name, @tmp_db_file_name, pass_phrase) do
+        case decrypt(file_name, tmp_db_path, pass_phrase) do
           :ok ->
-            records = File.read!(@tmp_db_file_name) |> :erlang.binary_to_term
-            File.rm(@tmp_db_file_name)
+            records = File.read!(tmp_db_path) |> :erlang.binary_to_term
+            File.rm(tmp_db_path)
             records
           {:error, reason} ->
             {:error, "Unable to load. #{reason}"}
@@ -117,6 +122,3 @@ defmodule PasswordManager do
     end
   end
 end
-
-
-
