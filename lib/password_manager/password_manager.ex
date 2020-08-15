@@ -42,8 +42,8 @@ defmodule PasswordManager do
 
   def update(records, idx, key, new_val) do
     record = Enum.at(records, idx)
-    record = Map.update!(record, key, fn(val) -> new_val end)
-    List.update_at(records, idx, fn(val) -> record end)
+    record = Map.update!(record, key, fn(_) -> new_val end)
+    List.update_at(records, idx, fn(_) -> record end)
   end
 
   # Creates a map of 1 based indexed titles from the given Records, i.e.
@@ -69,25 +69,25 @@ defmodule PasswordManager do
 
   # Saves the Records to a file and encrypts with openssl 256 AES.
   # Returns :ok or {:error, reason}
-  def save(records, pass_phrase, file_name \\ db_path) do
-    case File.write(tmp_db_path, :erlang.term_to_binary(records)) do
+  def save(records, pass_phrase, file_name \\ db_path()) do
+    case File.write(tmp_db_path(), :erlang.term_to_binary(records)) do
       :ok ->
-        encrypt(tmp_db_path, file_name, pass_phrase)
+        encrypt(tmp_db_path(), file_name, pass_phrase)
       {:error, reason} ->
-        {:error, "Unable to save. Could not write to temp file #{tmp_db_path} #{reason}"}
+        {:error, "Unable to save. Could not write to temp file #{tmp_db_path()} #{reason}"}
     end
   end
 
   # Decrypts and loads the Records from file.
   # Returns the Records or {:error, reason}
   # Returns empty list if the file does not exist.
-  def load(pass_phrase, file_name \\ db_path) do
+  def load(pass_phrase, file_name \\ db_path()) do
     case File.exists?(file_name) do
       true ->
-        case decrypt(file_name, tmp_db_path, pass_phrase) do
+        case decrypt(file_name, tmp_db_path(), pass_phrase) do
           :ok ->
-            records = File.read!(tmp_db_path) |> :erlang.binary_to_term
-            File.rm(tmp_db_path)
+            records = File.read!(tmp_db_path()) |> :erlang.binary_to_term
+            File.rm(tmp_db_path())
             records
           {:error, reason} ->
             {:error, "Unable to load. #{reason}"}
@@ -103,7 +103,7 @@ defmodule PasswordManager do
                              "-in", "#{in_file}", "-out", "#{out_file}"])
       File.rm(in_file)
       :ok
-    rescue e in ErlangError -> e
+    rescue e in ErlangError ->
       {:error, "Could not encrypt file #{in_file} #{ErlangError.message(e)}"}
     end
   end
@@ -114,10 +114,10 @@ defmodule PasswordManager do
                                   "-in", "#{in_file}", "-out", "#{out_file}"]) do
         {_, 0} ->
           :ok
-        {_, exit_code} ->
+        {_, _} ->
           {:error, "Could not decrypt file #{in_file}"}
       end
-    rescue e in ErlangError -> e
+    rescue e in ErlangError ->
       {:error, "Could not decrypt file #{in_file} #{ErlangError.message(e)}"}
     end
   end

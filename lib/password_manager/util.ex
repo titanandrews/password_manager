@@ -2,8 +2,8 @@ defmodule PasswordManager.Util do
   def convert_to_int(i) do
     unless is_number(i) do
       try do
-        idx = String.to_integer(i)
-      rescue e in ArgumentError -> e
+        String.to_integer(i)
+      rescue ArgumentError ->
         {:error, "Not a number."}
       end
     else

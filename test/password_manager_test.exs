@@ -97,7 +97,7 @@ defmodule PasswordManagerTest do
 
     titles = PasswordManager.make_indexed_titles([pr1, pr2])
     assert titles != nil
-    assert Map.size(titles) == 2
+    assert Kernel.map_size(titles) == 2
     assert titles[1] == "MyBank"
     assert titles[2] == "MyOtherBank"
   end

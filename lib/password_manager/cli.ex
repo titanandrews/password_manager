@@ -16,45 +16,45 @@ defmodule PasswordManager.CLI do
 
   defmodule CmdProcessor do
 
-    def accept_cmd("help"), do: help
-    def accept_cmd("h"),    do: help
-    def accept_cmd("exit"), do: exit
-    def accept_cmd("x"),    do: exit
-    def accept_cmd("new"),  do: new
-    def accept_cmd("n"),    do: new
-    def accept_cmd("find"), do: find
-    def accept_cmd("f"),    do: find
-    def accept_cmd("delete"), do: delete
-    def accept_cmd("d"),      do: delete
-    def accept_cmd("dump"),   do: dump
-    def accept_cmd("p"),      do: dump
+    def accept_cmd("help"), do: help()
+    def accept_cmd("h"),    do: help()
+    def accept_cmd("exit"), do: exit()
+    def accept_cmd("x"),    do: exit()
+    def accept_cmd("new"),  do: new()
+    def accept_cmd("n"),    do: new()
+    def accept_cmd("find"), do: find()
+    def accept_cmd("f"),    do: find()
+    def accept_cmd("delete"), do: delete()
+    def accept_cmd("d"),      do: delete()
+    def accept_cmd("dump"),   do: dump()
+    def accept_cmd("p"),      do: dump()
 
     def accept_cmd(x) do
       IO.puts "Don't know how to #{x}\nType help to get help."
     end
 
     def new do
-      title = IO.gets(:standard_io, "Title? ") |> String.strip
-      user = IO.gets(:standard_io, "User name or id? ") |> String.strip
-      password = IO.gets(:standard_io, "Password? ") |> String.strip
-      notes = IO.gets(:standard_io, "Notes? ") |> String.strip
+      title = IO.gets(:standard_io, "Title? ") |> String.trim
+      user = IO.gets(:standard_io, "User name or id? ") |> String.trim
+      password = IO.gets(:standard_io, "Password? ") |> String.trim
+      notes = IO.gets(:standard_io, "Notes? ") |> String.trim
       IO.puts "A new record with the following information will be created"
       IO.puts "\tTitle: #{title}"
       IO.puts "\tUser name: #{user}"
       IO.puts "\tPassword: #{password}"
       IO.puts "\tNotes: #{notes}"
       confirm = IO.gets(:standard_io, "Confirm yes/no? ") |> String.downcase
-                                                          |>  String.strip
+                                                          |>  String.trim
       record = %PasswordManager.Record{title: title, user: user, password: password, notes: notes}
       _save(confirm, record)
     end
 
     defp _save("yes", record) do
-      passwd = _request_passwd
+      passwd = _request_passwd()
       case PasswordManager.load(passwd) do
         {:error, reason} ->
           IO.puts "Record not saved! #{reason}"
-          _reset_passwd
+          _reset_passwd()
         records ->
           case PasswordManager.duplicate?(records, record.title) do
             true ->
@@ -67,18 +67,18 @@ defmodule PasswordManager.CLI do
       end
     end
 
-    defp _save(other, _) do
+    defp _save(_, _) do
       IO.puts "Record not saved."
     end
 
     def find do
-      passwd = _request_passwd
+      passwd = _request_passwd()
       search_key = IO.gets(:standard_io, "Enter text to search: ") |> String.downcase
-                                                                   |>  String.strip
+                                                                   |>  String.trim
       case PasswordManager.load(passwd) do
         {:error, reason} ->
           IO.puts "Cannot open database #{reason}"
-          _reset_passwd
+          _reset_passwd()
           []
         all_records ->
           filtered_records = PasswordManager.search(all_records, search_key)
@@ -104,7 +104,7 @@ defmodule PasswordManager.CLI do
       Enum.each(indeces, fn(i) -> IO.puts "(#{i}) ===> #{titles_with_idx[i]}" end)
       idx = IO.gets(:standard_io, "Enter the number of the record you want to delete: ")
         |> String.downcase
-        |>  String.strip
+        |>  String.trim
       case PasswordManager.Util.convert_to_int(idx) do
         {:error, msg} ->
           {:error, msg}
@@ -119,48 +119,52 @@ defmodule PasswordManager.CLI do
     end
 
     def delete do
-      case find do
+      case find() do
         [] ->
           [] # Do nothing.
         {filtered_records, all_records} ->
-          idx_for_delete = nil
           case length(filtered_records) do
             0 -> 0
             1 ->
               idx_for_delete = PasswordManager.find_index(all_records,
                                                           Enum.at(filtered_records, 0).title)
-            other ->
+              _try_confirm_delete(all_records, idx_for_delete)
+            _ ->
               case _get_idx_for_multi_choice_delete(filtered_records) do
                 {:error, msg} ->
                   IO.puts msg
-                {num, title} ->
+                {_, title} ->
                   idx_for_delete = PasswordManager.find_index(all_records, title)
+                  _try_confirm_delete(all_records, idx_for_delete)
               end
           end
-          if idx_for_delete != nil do
-            record = Enum.at(all_records, idx_for_delete)
-            confirm = IO.gets(:standard_io, "The following record will be deleted.\n#{record}" <>
-                                            "Confirm yes/no? ") |> String.downcase |>  String.strip
-            _do_delete(confirm, all_records, idx_for_delete)
-          end
+      end
+    end
+
+    defp _try_confirm_delete(all_records, idx_for_delete) do
+      if idx_for_delete != nil do
+        record = Enum.at(all_records, idx_for_delete)
+        confirm = IO.gets(:standard_io, "The following record will be deleted.\n#{record}" <>
+                                        "Confirm yes/no? ") |> String.downcase |>  String.trim
+        _do_delete(confirm, all_records, idx_for_delete)
       end
     end
 
     defp _do_delete("yes", records, idx) do
       records = List.delete_at(records, idx)
-      PasswordManager.save(records, _request_passwd)
+      PasswordManager.save(records, _request_passwd())
     end
 
-    defp _do_delete(other, records, idx) do
+    defp _do_delete(_, _, _) do
       IO.puts "Nothing deleted."
     end
 
     def dump do
-      passwd = _request_passwd
+      passwd = _request_passwd()
       case PasswordManager.load(passwd) do
         {:error, reason} ->
           IO.puts "Cannot open database #{reason}"
-          _reset_passwd
+          _reset_passwd()
         records ->
           IO.puts "#{length(records)} total entries"
           IO.puts "-----------------------------------------------"
@@ -189,7 +193,7 @@ defmodule PasswordManager.CLI do
     end
 
     defp _process_passwd(nil) do
-      passwd = IO.gets(:standard_io, "Enter the master password? ") |> String.strip
+      passwd = IO.gets(:standard_io, "Enter the master password? ") |> String.trim
       State.put_passwd(passwd)
       passwd
     end
@@ -204,25 +208,26 @@ defmodule PasswordManager.CLI do
   end
 
   def process_input do
-    input = IO.gets(:standard_io, "?") |> String.downcase |> String.strip
+    input = IO.gets(:standard_io, "?") |> String.downcase |> String.trim
     CmdProcessor.accept_cmd(input)
-    process_input
+    process_input()
   end
 
   def exe_path do
     path = System.find_executable("password_manager")
     if path == nil do
-      path = "."
+      Path.dirname(".")
+    else
+      Path.dirname(path)
     end
-    Path.dirname(path)
   end
 
-  def main(argv) do
+  def main(_) do
     IO.puts "\n\t\tWelcome to Password Manager!\n"
-    lic_path = Path.join(exe_path, "LICENSE")
+    lic_path = Path.join(exe_path(), "LICENSE")
     File.read!(lic_path) |> IO.puts
     IO.puts "\tEnter help to see a list of commands"
     State.start_link
-    process_input
+    process_input()
   end
 end
