@@ -99,7 +99,7 @@ defmodule PasswordManager do
 
   defp encrypt(in_file, out_file, pass_phrase) do
     try do
-      System.cmd("openssl", ["enc", "-aes-256-cbc", "-k", "#{pass_phrase}",
+      System.cmd("openssl", ["enc", "-aes-256-cbc", "-salt", "-pbkdf2",  "-k", "#{pass_phrase}",
                              "-in", "#{in_file}", "-out", "#{out_file}"])
       File.rm(in_file)
       :ok
@@ -110,7 +110,7 @@ defmodule PasswordManager do
 
   defp decrypt(in_file, out_file, pass_phrase) do
     try do
-      case System.cmd("openssl", ["enc", "-aes-256-cbc", "-d", "-k", "#{pass_phrase}",
+      case System.cmd("openssl", ["enc", "-aes-256-cbc", "-d", "-salt", "-pbkdf2", "-k", "#{pass_phrase}",
                                   "-in", "#{in_file}", "-out", "#{out_file}"]) do
         {_, 0} ->
           :ok
